@@ -1,3 +1,5 @@
+from code.my_random import poisson_random_numbers
+
 class Operation:
     operation_type = None
     def __init__(self, processor_number):
@@ -7,14 +9,18 @@ class CalcOperation(Operation):
     operation_type = "calc"
 
 class MemoryOperation(Operation):
-    address = 5
+    def __init__(self, processor_number):
+        super().__init__(processor_number)
+        self.address = poisson_random_numbers(5, 2, 0, 7)[0]
 
     def get_address(self):
         return bin(self.address)
 
 class WriteOperation(MemoryOperation):
     operation_type = "write"
-    data = 18
+    def __init__(self, processor_number):
+        super().__init__(processor_number)
+        self.data = poisson_random_numbers(5, 2, 0, 0xFFFF)[0]
 
     def get_data(self):
         return hex(self.data)

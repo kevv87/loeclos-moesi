@@ -22,12 +22,24 @@ class Processor(threading.Thread):
     def create_read_operation(self):
         return ReadOperation(self.processor_number)
 
+    def choose_operation(self, random_number):
+        if random_number == 1:
+            operation = self.create_calc_operation()
+        elif random_number == 2:
+            operation = self.create_write_operation()
+        elif random_number == 3:
+            operation = self.create_read_operation()
+        else:
+            raise Exception("Number to choose out of bounds")
+        return operation
+
     def run(self):
         print("### Starting Processor ###")
         while not self.stop_event.is_set():
-            self.comm_bus.append(self.create_calc_operation())
-            self.comm_bus.append(self.create_write_operation())
-            self.comm_bus.append(self.create_read_operation())
+            random_number = poisson_random_numbers(5, 2, 1, 3)[0]
+            operation = self.choose_operation(random_number)
+            self.comm_bus.append(operation)
+
             time.sleep(0.5)
 
     def stop(self):
