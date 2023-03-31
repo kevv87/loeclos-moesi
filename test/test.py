@@ -1,6 +1,7 @@
 import unittest
 from test.test_processors import test_processors_suite
 from test.test_my_random import test_random_suite
+from test.test_memory import test_memory_suite
 
 class TestLib(unittest.TestCase):
     def test_lib_should_work(self):
@@ -18,3 +19,4 @@ if __name__ == "__main__":
     runner.run(test_lib_suite())
     runner.run(test_processors_suite())
     runner.run(test_random_suite())
+    runner.run(test_memory_suite())
