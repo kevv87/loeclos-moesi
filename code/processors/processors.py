@@ -1,9 +1,10 @@
 import threading
 import uuid
 import time
+
 from code.operations import CalcOperation, WriteOperation, ReadOperation
 from code.my_random import poisson_random_numbers
-
+from code.processors.constants import *
 
 class Processor(threading.Thread):
     def __init__(self, comm_bus):
@@ -40,7 +41,7 @@ class Processor(threading.Thread):
             operation = self.choose_operation(random_number)
             self.comm_bus.append(operation)
 
-            time.sleep(0.5)
+            time.sleep(PROCESSOR_ACTION_SECONDS)
 
     def stop(self):
         self.stop_event.set()

@@ -3,7 +3,8 @@ from unittest.mock import patch
 import threading
 import re
 import time
-import code.processors as processors
+import code.processors.processors as processors
+from code.processors.constants import *
 import code.my_random
 
 class BasicProcessor(unittest.TestCase):
@@ -73,6 +74,17 @@ class BasicProcessor(unittest.TestCase):
         for instruction in self.mock_bus:
             self.assertTrue(instruction.operation_type)
             self.assertTrue(instruction.processor_number)
+
+    def test_processor_should_take_constant_time(self):
+        print("###test_processor_should_take_constant_time")
+        self.processor.start()
+
+        time.sleep(PROCESSOR_ACTION_SECONDS * 3)
+        
+        self.processor.stop()
+        self.processor.join()
+
+        self.assertEqual(len(self.mock_bus), 3)
 
     def test_every_operation_type_should_have_common_fields(self):
         print("###test_every_operation_should_have_common_fields")
