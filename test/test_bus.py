@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 from code.bus import Bus
 from code.operations import CalcOperation, WriteOperation, ReadOperation
@@ -87,21 +87,17 @@ class BusNoShareableCopiesOnCaches(unittest.TestCase):
     def test_bus_should_have_reference_to_memory(self):
         self.assertTrue(self.bus.memory)
 
-    def test_bus_should_notify_to_search_owners_on_read_miss(self):
-        operation = ReadOperation(1)
-        operation.miss = True
-        self.bus.read(operation)
-        for subscriber in self.bus.publisher_service.subscribers:
-            subscriber.notify_rsvp.assert_called()
-            #subscriber.notify_rsvp.assert_called_with(operation)
-
-    def test_bus_should_notify_again_to_search_sharers_on_read_miss(self):
+    def test_bus_should_notify_two_times_to_search_owners_or_sharers(self):
         operation = ReadOperation(1)
         operation.miss = True
         self.bus.read(operation)
         for subscriber in self.bus.publisher_service.subscribers:
             subscriber.notify_rsvp.assert_called()
             self.assertEqual(subscriber.notify_rsvp.call_count, 2)
+            subscriber.notify_rsvp.assert_has_calls(
+                    [call(operation), 
+                     call([False for subscriber in self.bus.publisher_service.subscribers])
+                    ])
         
     def test_read_miss_should_retrieve_from_memory(self):
         operation = ReadOperation(1)
@@ -160,11 +156,14 @@ class BusShareableCopiesOnCaches(unittest.TestCase):
         operation_result = self.bus.read(operation)
 
         self.memory_mock.read_data.assert_not_called()
-        self.mock_cache_owner.notify_rsvp.assert_called_once()
+
+        for subscriber in self.bus.publisher_service.subscribers:
+            subscriber.notify_rsvp.assert_called_with(operation)
+            subscriber.notify.assert_called_with(operation_result)
 
         self.assertEqual(operation_result, 15)
 
-    def test_read_miss_should_retrive_from_cache_second_try(self):
+    def test_read_miss_should_retrieve_from_cache_second_try(self):
         self.bus.publisher_service.unsubscribe(self.mock_cache_owner)
 
         operation = ReadOperation(1)
@@ -176,6 +175,10 @@ class BusShareableCopiesOnCaches(unittest.TestCase):
         for subscriber in self.bus.publisher_service.subscribers:
             subscriber.notify_rsvp.assert_called()
             self.assertEqual(subscriber.notify_rsvp.call_count, 2)
+            subscriber.notify_rsvp.assert_has_calls(
+                    [call(operation), 
+                     call([False for subscriber in self.bus.publisher_service.subscribers])
+                    ])
 
         self.assertEqual(operation_result, 20)
 

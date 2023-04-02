@@ -101,7 +101,7 @@ class PublisherRsvpSuite(unittest.TestCase):
 
             # Assert that each call to wait_for_response was passed a subscriber and a list to store the thread's results
             wait_for_response_mock.assert_has_calls(
-                [call(subscriber, ANY) for subscriber in patched_publisher.subscribers],
+                [call(subscriber, ANY, ANY) for subscriber in patched_publisher.subscribers],
                 any_order=True
             )
 

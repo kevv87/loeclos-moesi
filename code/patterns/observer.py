@@ -31,7 +31,7 @@ class PublisherRsvp(Publisher):
         threads_results = []
         for subscriber in self.subscribers:
             thread = Thread(target=self.wait_for_response,
-                       args=(subscriber, threads_results) )
+                       args=(subscriber, threads_results, msg) )
             wait_threads.append(thread)
             thread.start()
 
@@ -40,8 +40,8 @@ class PublisherRsvp(Publisher):
 
         return threads_results
 
-    def wait_for_response(self, subscriber, threads_results):
-        threads_results.append(subscriber.notify_rsvp())
+    def wait_for_response(self, subscriber, threads_results, msg=None):
+        threads_results.append(subscriber.notify_rsvp(msg))
 
 class Subscriber():
     def notify(self, msg=None):
