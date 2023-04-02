@@ -113,7 +113,6 @@ class VisualizeMemory(unittest.TestCase):
         memory_state = self.memory_instance.visualize()
         self.assertEqual(memory_state, self.memory_instance.contents)
 
-
 def test_memory_suite():
     print("### Starting test_memory_suite")
     suite = unittest.TestSuite()
