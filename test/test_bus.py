@@ -105,8 +105,9 @@ class BusNoShareableCopiesOnCaches(unittest.TestCase):
 
         operation_result = self.bus.read(operation)
 
-        self.assertEqual(operation_result, 10)
         self.memory_mock.read_data.assert_called()
+        self.assertEqual(operation_result.data, 10)
+        self.assertEqual(operation_result.processor_number, -1)
 
     def test_read_hit_should_only_notify(self):
         operation = ReadOperation(1)

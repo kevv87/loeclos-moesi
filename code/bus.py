@@ -1,5 +1,7 @@
 import threading
 from code.patterns.observer import PublisherRsvp
+from code.operations import ResponseOperation
+from code.constants import *
 
 class Bus():
     def __init__(self, memory, publisher_service=PublisherRsvp()):
@@ -8,7 +10,9 @@ class Bus():
         self.memory = memory
 
     def retrieve(self, operation):
-        return self.memory.read_data(operation.address)
+        data = self.memory.read_data(operation.address)
+        response = ResponseOperation(PROCESSOR_NUMBER_MEMORY, data)
+        return response
 
     def store(self, operation):
         return self.memory.write_data(operation.address, operation.data)

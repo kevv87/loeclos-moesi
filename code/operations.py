@@ -28,3 +28,11 @@ class WriteOperation(MemoryOperation):
 
 class ReadOperation(MemoryOperation):
     operation_type = "read"
+
+class ResponseOperation(MemoryOperation):
+    def __init__(self,processor_number, data):
+        super().__init__(processor_number)
+        self.data = data
+
+    def get_data(self):
+        return hex(self.data)
