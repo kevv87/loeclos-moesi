@@ -21,15 +21,19 @@ class PublisherRsvp(Publisher):
         super().subscribe(subscriber)
 
     def notify_subscribers_rsvp(self, msg=None):
-        self.subscribers_response = []
+        subscribers_response = []
         for subscriber in self.subscribers:
-            self.subscribers_response.append(subscriber.notify_rsvp(msg))
+            subscribers_response.append(subscriber.notify_rsvp(msg))
+        return subscribers_response
+    
+    def unsubscribeAll(self):
+        self.subscribers = []
 
 class Subscriber():
     def notify(self, msg=None):
         pass
 
-class SubscriberRsvp():
+class SubscriberRsvp(Subscriber):
     def __init__(self):
         self.can_answer = True
 
