@@ -1,6 +1,7 @@
 import unittest
 from code.patterns.observer import (Publisher, Subscriber, PublisherRsvp,
                                     SubscriberRsvp)
+from unittest.mock import patch, Mock, MagicMock, call, ANY
 
 class MockSubscriber():
     def __init__(self):
@@ -61,6 +62,9 @@ def test_publisher_suite():
 class PublisherRsvpSuite(unittest.TestCase):
     def setUp(self):
         self.publisher = PublisherRsvp()
+
+    def tearDown(self):
+        self.publisher.unsubscribeAll()
     
     def test_publisher_should_exist(self):
         self.assertTrue(self.publisher)
@@ -73,23 +77,33 @@ class PublisherRsvpSuite(unittest.TestCase):
     def test_when_notifying_publisher_should_wait_response(self):
         subscriber = MockSubscriberRsvp()
         self.publisher.subscribe(subscriber)
-        self.publisher.notify_subscribers_rsvp()
+        response = self.publisher.notify_subscribers_rsvp()
         self.assertTrue(subscriber.notified)
-        self.assertEqual(self.publisher.subscribers_response,\
+        self.assertEqual(response,\
                          ["Hello World!"])
 
-    def test_subscriber_should_accumulate_responses(self):
-        subscriber1 = MockSubscriberRsvp()
-        subscriber2 = MockSubscriberRsvp()
-        self.publisher.subscribe(subscriber1)
-        self.publisher.subscribe(subscriber2)
+    def test_publisher_should_create_threads_to_listen(self):
+        # Create a MagicMock object to mock the wait_for_response method
+        wait_for_response_mock = MagicMock()
 
-        self.publisher.notify_subscribers_rsvp()
+        # Patch the wait_for_response method with the MagicMock object
+        with patch.object(PublisherRsvp, 'wait_for_response', wait_for_response_mock):
+            patched_publisher = PublisherRsvp()
+            for i in range(3):
+                mock_subscriber = Mock(spec=SubscriberRsvp)
+                mock_subscriber.can_answer = True
+                patched_publisher.subscribe(mock_subscriber)
 
-        self.assertEqual(len(self.publisher.subscribers_response),\
-                            len(self.publisher.subscribers))
-        self.assertEqual(self.publisher.subscribers_response,\
-                         ["Hello World!", "Hello World!"])
+            patched_publisher.notify_subscribers_rsvp()
+
+            # Assert that the wait_for_response method was called three times
+            self.assertEqual(wait_for_response_mock.call_count, 3)
+
+            # Assert that each call to wait_for_response was passed a subscriber and a list to store the thread's results
+            wait_for_response_mock.assert_has_calls(
+                [call(subscriber, ANY) for subscriber in patched_publisher.subscribers],
+                any_order=True
+            )
 
 def test_publisher_rsvp_suite():
     print("### Starting test_publisher_rsvp_suite")

@@ -1,3 +1,5 @@
+from threading import Thread
+
 class Publisher():
     def __init__(self):
         self.subscribers = []
@@ -21,10 +23,22 @@ class PublisherRsvp(Publisher):
         super().subscribe(subscriber)
 
     def notify_subscribers_rsvp(self, msg=None):
-        subscribers_response = []
+        result = None
+        wait_threads = []
+        threads_results = []
         for subscriber in self.subscribers:
-            subscribers_response.append(subscriber.notify_rsvp(msg))
-        return subscribers_response
+            thread = Thread(target=self.wait_for_response,
+                       args=(subscriber, threads_results) )
+            wait_threads.append(thread)
+            thread.start()
+
+        for thread in wait_threads:
+            thread.join()
+
+        return threads_results
+
+    def wait_for_response(self, subscriber, threads_results):
+        threads_results.append(subscriber.notify_rsvp())
     
     def unsubscribeAll(self):
         self.subscribers = []
