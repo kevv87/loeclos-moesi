@@ -31,41 +31,41 @@ class MemoryWriting(unittest.TestCase):
     def setUp(self):
         self.memory_instance = Memory()
 
-    def test_should_add_data_to_memory(self):
-        self.memory_instance.add_data(0, 1, real_time=False)
+    def test_should_write_data_to_memory(self):
+        self.memory_instance.write_data(0, 1, real_time=False)
         self.assertEqual(self.memory_instance.contents[0], 1)
 
-    def test_add_data_should_fail_if_address_is_out_of_bounds(self):
+    def test_write_data_should_fail_if_address_is_out_of_bounds(self):
         with self.assertRaises(SegmentationFault):
-            self.memory_instance.add_data(MEMORY_BLOCK_WIDTH, 1, real_time=False)
+            self.memory_instance.write_data(MEMORY_BLOCK_WIDTH, 1, real_time=False)
 
         with self.assertRaises(SegmentationFault):
-            self.memory_instance.add_data(MEMORY_BLOCK_WIDTH, -1, real_time=False)
+            self.memory_instance.write_data(MEMORY_BLOCK_WIDTH, -1, real_time=False)
 
-    def test_add_data_should_fail_if_data_is_out_of_bounds(self):
+    def test_write_data_should_fail_if_data_is_out_of_bounds(self):
         max_val = (1 << MEMORY_BLOCK_DEPTH_BITS - 1) - 1
         min_val = -max_val - 1
 
         with self.assertRaises(DataOverflow):
-            self.memory_instance.add_data(0, max_val + 1, real_time=False)
+            self.memory_instance.write_data(0, max_val + 1, real_time=False)
 
         with self.assertRaises(DataOverflow):
-            self.memory_instance.add_data(0, min_val - 1, real_time=False)
+            self.memory_instance.write_data(0, min_val - 1, real_time=False)
 
-    def test_add_data_edge_cases_should_be_ok(self):
+    def test_write_data_edge_cases_should_be_ok(self):
         max_val = (1 << MEMORY_BLOCK_DEPTH_BITS - 1) - 1
         min_val = -max_val - 1
 
-        self.memory_instance.add_data(0, max_val, real_time=False)
+        self.memory_instance.write_data(0, max_val, real_time=False)
         self.assertEqual(self.memory_instance.contents[0], max_val)
 
-        self.memory_instance.add_data(0, min_val, real_time=False)
+        self.memory_instance.write_data(0, min_val, real_time=False)
         self.assertEqual(self.memory_instance.contents[0], min_val)
 
     def test_writing_data_should_take_triple_time_than_processor_action(self):
         start_timer = time.time()
 
-        self.memory_instance.add_data(0, 1)
+        self.memory_instance.write_data(0, 1)
         self.assertEqual(self.memory_instance.contents[0], 1)
 
         elapsed_time = time.time() - start_timer

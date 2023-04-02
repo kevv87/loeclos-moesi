@@ -33,7 +33,7 @@ class Memory():
 
         return self.contents[address]
 
-    def add_data(self, address, data, real_time=True):
+    def write_data(self, address, data, real_time=True):
         self.memory_access(address, data, True, real_time)
 
     def read_data(self, address, real_time=True):
