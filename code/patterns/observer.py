@@ -14,6 +14,9 @@ class Publisher():
         for subscriber in self.subscribers:
             subscriber.notify(msg)
 
+    def unsubscribeAll(self):
+        self.subscribers = []
+
 class PublisherRsvp(Publisher):
     def subscribe(self, subscriber):
         if not hasattr(subscriber, 'can_answer') or\
@@ -39,9 +42,6 @@ class PublisherRsvp(Publisher):
 
     def wait_for_response(self, subscriber, threads_results):
         threads_results.append(subscriber.notify_rsvp())
-    
-    def unsubscribeAll(self):
-        self.subscribers = []
 
 class Subscriber():
     def notify(self, msg=None):

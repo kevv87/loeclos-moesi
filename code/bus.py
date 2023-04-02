@@ -23,13 +23,17 @@ class Bus():
 
         caches_response = self.publisher_service.notify_subscribers_rsvp(operation)
 
-        print(caches_response)
         if operation.miss:
             found_in_caches = self.search_in_caches(caches_response)
             if found_in_caches:
-                result = caches_response[0]
+                return caches_response[0]
             else:
-                result = self.retrieve(operation)
+                caches_response = self.publisher_service.notify_subscribers_rsvp(operation)
+                found_in_caches = self.search_in_caches(caches_response)
+                if found_in_caches:
+                    return caches_response[0]
+                else:
+                    result = self.retrieve(operation)
         else:
             result = operation
         

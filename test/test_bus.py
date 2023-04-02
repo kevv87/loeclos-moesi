@@ -6,7 +6,6 @@ from code.operations import CalcOperation, WriteOperation, ReadOperation
 from code.patterns.observer import SubscriberRsvp
 from code.memory.memory import Memory
 
-
 class BasicBus(unittest.TestCase):
     def setUp(self):
         self.memory_mock = Mock(spec = Memory())
@@ -43,7 +42,7 @@ class BasicBus(unittest.TestCase):
 
     def test_bus_should_notify_with_rsvp_subscribers_when_read(self):
         self.bus.read(ReadOperation(1))
-        self.subscriber.notify_rsvp.assert_called_once()
+        self.subscriber.notify_rsvp.assert_called()
 
     def test_bus_should_notify_subscribers_when_write(self):
         self.bus.write(WriteOperation(1))
@@ -88,6 +87,22 @@ class BusNoShareableCopiesOnCaches(unittest.TestCase):
     def test_bus_should_have_reference_to_memory(self):
         self.assertTrue(self.bus.memory)
 
+    def test_bus_should_notify_to_search_owners_on_read_miss(self):
+        operation = ReadOperation(1)
+        operation.miss = True
+        self.bus.read(operation)
+        for subscriber in self.bus.publisher_service.subscribers:
+            subscriber.notify_rsvp.assert_called()
+            #subscriber.notify_rsvp.assert_called_with(operation)
+
+    def test_bus_should_notify_again_to_search_sharers_on_read_miss(self):
+        operation = ReadOperation(1)
+        operation.miss = True
+        self.bus.read(operation)
+        for subscriber in self.bus.publisher_service.subscribers:
+            subscriber.notify_rsvp.assert_called()
+            self.assertEqual(subscriber.notify_rsvp.call_count, 2)
+        
     def test_read_miss_should_retrieve_from_memory(self):
         operation = ReadOperation(1)
         operation.miss = True
@@ -116,36 +131,53 @@ class BusNoShareableCopiesOnCaches(unittest.TestCase):
 
         self.memory_mock.write_data.assert_not_called()
 
-class BusOneShareableCopyOnCaches(unittest.TestCase):
+class BusShareableCopiesOnCaches(unittest.TestCase):
     def setUp(self):
         self.memory_mock = Mock(spec = Memory)
         self.memory_mock.read_data.return_value = 10
 
         self.bus = Bus(self.memory_mock)
 
-        mock_cache = Mock(spec = SubscriberRsvp)
-        mock_cache.notify_rsvp.return_value = 15
-        mock_cache.can_answer = True
-        self.bus.subscribe(mock_cache)
+        self.mock_cache_owner = Mock(spec = SubscriberRsvp)
+        self.mock_cache_owner.notify_rsvp.return_value = 15
+
+        self.mock_cache_owner.can_answer = True
+        self.bus.subscribe(self.mock_cache_owner)
 
         for i in range(3):
             mock_cache = Mock(spec = SubscriberRsvp)
-            mock_cache.notify_rsvp.return_value = False
+            mock_cache.notify_rsvp.side_effect = [False, 20]
             mock_cache.can_answer = True
             self.bus.subscribe(mock_cache)
 
     def tearDown(self):
         self.bus.unsubscribeAll()
 
-    #TODO: Don't access caches everytime, just when found
-    def test_read_miss_should_retrieve_from_cache(self):
+    def test_read_miss_should_retrieve_from_cache_first_try(self):
         operation = ReadOperation(1)
         operation.miss = True
 
         operation_result = self.bus.read(operation)
 
         self.memory_mock.read_data.assert_not_called()
+        self.mock_cache_owner.notify_rsvp.assert_called_once()
+
         self.assertEqual(operation_result, 15)
+
+    def test_read_miss_should_retrive_from_cache_second_try(self):
+        self.bus.publisher_service.unsubscribe(self.mock_cache_owner)
+
+        operation = ReadOperation(1)
+        operation.miss = True
+
+        operation_result = self.bus.read(operation)
+
+        self.memory_mock.read_data.assert_not_called()
+        for subscriber in self.bus.publisher_service.subscribers:
+            subscriber.notify_rsvp.assert_called()
+            self.assertEqual(subscriber.notify_rsvp.call_count, 2)
+
+        self.assertEqual(operation_result, 20)
 
     def test_read_hit_should_only_notify(self):
         operation = ReadOperation(1)
@@ -171,7 +203,7 @@ def test_bus_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BasicBus))
     suite.addTest(unittest.makeSuite(BusNoShareableCopiesOnCaches))
-    suite.addTest(unittest.makeSuite(BusOneShareableCopyOnCaches))
+    suite.addTest(unittest.makeSuite(BusShareableCopiesOnCaches))
     return suite
 
 if __name__ == "__main__":
