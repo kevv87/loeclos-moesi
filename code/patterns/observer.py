@@ -23,7 +23,7 @@ class PublisherRsvp(Publisher):
     def notify_subscribers_rsvp(self, msg=None):
         self.subscribers_response = []
         for subscriber in self.subscribers:
-            self.subscribers_response.append(subscriber.notify(msg))
+            self.subscribers_response.append(subscriber.notify_rsvp(msg))
 
 class Subscriber():
     def notify(self, msg=None):
@@ -32,3 +32,6 @@ class Subscriber():
 class SubscriberRsvp():
     def __init__(self):
         self.can_answer = True
+
+    def notify_rsvp(self, msg=None):
+        return None

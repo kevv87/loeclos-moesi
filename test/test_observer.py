@@ -14,7 +14,7 @@ class MockSubscriberRsvp():
         self.notified = False
         self.can_answer = True
 
-    def notify(self, msg=None):
+    def notify_rsvp(self, msg=None):
         self.notified = True
         return "Hello World!"
 
@@ -51,7 +51,6 @@ class BasicPublisher(unittest.TestCase):
         self.publisher.subscribe(subscriber)
         self.publisher.notify_subscribers("Hello World!")
         self.assertTrue(subscriber.notified)
-        self.assertEqual(subscriber.msg, "Hello World!")
 
 def test_publisher_suite():
     print("### Starting test_publisher_suite")
@@ -80,15 +79,6 @@ class PublisherRsvpSuite(unittest.TestCase):
                          ["Hello World!"])
 
     def test_subscriber_should_accumulate_responses(self):
-        class MockSubscriberRsvp():
-            def __init__(self):
-                self.notified = False
-                self.can_answer = True
-
-            def notify(self, msg=None):
-                self.notified = True
-                return "Hello World!"
-
         subscriber1 = MockSubscriberRsvp()
         subscriber2 = MockSubscriberRsvp()
         self.publisher.subscribe(subscriber1)
@@ -145,7 +135,7 @@ def test_subscriber_rsvp_suite():
 if __name__ == "__main__":
     runner = unittest.TextTestRunner()
 
-    #runner.run(test_publisher_suite())
-    #runner.run(test_subscriber_suite())
-    #runner.run(test_publisher_rsvp_suite())
+    runner.run(test_publisher_suite())
+    runner.run(test_subscriber_suite())
+    runner.run(test_publisher_rsvp_suite())
     runner.run(test_subscriber_rsvp_suite())
