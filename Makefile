@@ -10,3 +10,10 @@ test_processors:
 
 test_memory:
 	${PY} -m test.test_memory
+
+test_bus:
+	${PY} -m test.test_bus
+
+test_observer:
+	${PY} -m test.test_observer
+
