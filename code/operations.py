@@ -12,6 +12,7 @@ class MemoryOperation(Operation):
     def __init__(self, processor_number):
         super().__init__(processor_number)
         self.address = poisson_random_numbers(5, 2, 0, 7)[0]
+        self.miss = False
 
     def get_address(self):
         return bin(self.address)
@@ -27,3 +28,11 @@ class WriteOperation(MemoryOperation):
 
 class ReadOperation(MemoryOperation):
     operation_type = "read"
+
+class ResponseOperation(MemoryOperation):
+    def __init__(self,processor_number, data):
+        super().__init__(processor_number)
+        self.data = data
+
+    def get_data(self):
+        return hex(self.data)
