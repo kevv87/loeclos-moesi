@@ -15,9 +15,11 @@ class CacheBlock():
         self.mem_address = 0
 
 class Cache(SubscriberRsvp):
-    def __init__(self, coherencyService = Moesi()):
+    def __init__(self, my_processor_number, bus, coherencyService = Moesi()):
         self.contents = [CacheBlock(0), CacheBlock(1), CacheBlock(2), CacheBlock(3)]
+        self.bus = bus
         self.coherencyService = coherencyService
+        self.processor_number = my_processor_number
 
     def process_read_notification(self, operation):
         matching_block = self.find_block(operation)
@@ -26,15 +28,27 @@ class Cache(SubscriberRsvp):
             matching_block.state =\
                     self.get_next_state(matching_block.state, MoesiEvents.OTHERS_READ)
 
+    def change_state(self, block, operation):
+        previous_state = block.state
+        next_state =\
+            self.get_next_state(block.state, MoesiEvents.OTHERS_WRITE)
+
+        if ( ( previous_state == MoesiStates.M or previous_state == MoesiStates.O )
+            and next_state == MoesiStates.I ):
+            self.bus.writeBack(operation)
+
+        block.state = next_state
+
     def process_write_notification(self, operation):
         matching_block = self.find_block(operation)
 
         if matching_block:
-            matching_block.state =\
-                    self.get_next_state(matching_block.state, MoesiEvents.OTHERS_WRITE)
+            self.change_state(matching_block, operation)
 
     def notify(self, msg=None):
-        if msg.operation_type == "read":
+        if msg.processor_number == self.processor_number:
+            return
+        elif msg.operation_type == "read":
             self.process_read_notification(msg)
         elif msg.operation_type == "write":
             self.process_write_notification(msg)

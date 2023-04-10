@@ -1,13 +1,17 @@
 import unittest
+from unittest.mock import Mock
+
 from code.cache.cache import Cache, CacheBlock
 from code.cache.moesi import Moesi
 from code.cache.constants import *
+from code.bus import Bus
 
 from code.operations import WriteOperation, ReadOperation
 
 class BasicCache(unittest.TestCase):
     def setUp(self):
-        self.cache = Cache()
+        self.busMock = Mock(spec = Bus)
+        self.cache = Cache(4, self.busMock)
 
     def test_cache_should_exist(self):
         self.assertTrue(Cache)
@@ -35,7 +39,8 @@ class BasicCache(unittest.TestCase):
         self.assertTrue(cache_block.state)
 
     def test_cache_should_have_four_blocks(self):
-        cache = Cache()
+        self.busMock = Mock(spec = Bus)
+        cache = Cache(4, self.busMock)
         self.assertEqual(len(cache.contents), 4)
 
     def test_should_write_operation(self):
@@ -81,7 +86,8 @@ class BasicCache(unittest.TestCase):
 
 class AssociativityTests(unittest.TestCase):
     def setUp(self):
-        self.cache = Cache()
+        self.busMock = Mock(spec = Bus)
+        self.cache = Cache(4, self.busMock)
 
     def test_odd_directions_should_go_on_zero_or_one(self):
         write_operation = WriteOperation(2)
@@ -271,9 +277,10 @@ class MoesiTests(unittest.TestCase):
         nextState = moesi.compute_next_state(MoesiStates.O, MoesiEvents.OTHERS_READ)
         self.assertEqual(nextState, MoesiStates.O)
 
-class Cache_Moesi_Tests(unittest.TestCase):
+class CacheStatesTests(unittest.TestCase):
     def setUp(self):
-        self.cache = Cache()
+        self.busMock = Mock(spec = Bus)
+        self.cache = Cache(4, self.busMock)
         self.cache.contents[0].address = 2
         self.cache.contents[1].address = 4
         self.cache.contents[2].address = 1
@@ -340,9 +347,6 @@ class Cache_Moesi_Tests(unittest.TestCase):
 
         self.cache.notify(readOperation)
         self.assertEqual(self.cache.contents[0].state, MoesiStates.S)
-
-    def test_notify_rsvp_to_shared_should_wait_to_second_try_to_respond(self):
-        pass
 
     def test_read_to_exclusive_should_remain_exclusive(self):
         self.cache.contents[0].state = MoesiStates.E
@@ -476,8 +480,48 @@ class Cache_Moesi_Tests(unittest.TestCase):
 
         self.assertEqual(self.cache.contents[0].state, MoesiStates.O)
 
-    #TODO: Faltan writebacks
+    def test_cache_should_ignore_own_notifications(self):
+        self.cache.contents[0].state = MoesiStates.M
+        self.cache.contents[0].mem_address = 8
 
+        writeOperation = WriteOperation(4)
+        writeOperation.address = 8
+
+        self.cache.notify(writeOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.M)
+
+class CacheResponsesTests(unittest.TestCase):
+    def setUp(self):
+        self.busMock = Mock(spec = Bus)
+        self.cache = Cache(4, self.busMock)
+
+    def test_cache_should_have_reference_to_bus(self):
+        self.assertEqual(self.cache.bus, self.busMock)
+
+    def test_cache_when_block_moves_from_modified_to_invalid_should_writeback(self):
+        self.cache.contents[0].state = MoesiStates.M
+        self.cache.contents[0].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 8
+
+        self.cache.notify(writeOperation)
+
+        self.busMock.writeBack.assert_called_once_with(writeOperation)
+
+    def test_cache_when_block_moves_from_owner_to_invalid_should_writeback(self):
+        self.cache.contents[0].state = MoesiStates.O
+        self.cache.contents[0].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 8
+
+        self.cache.notify(writeOperation)
+
+        self.busMock.writeBack.assert_called_once_with(writeOperation)
+
+    #TODO: Hay que verificar si las notificaciones son propias o de otro procesador
 
 def test_cache_suite():
     print("### Starting test_cache_suite")
@@ -485,7 +529,8 @@ def test_cache_suite():
     suite.addTest(unittest.makeSuite(BasicCache))
     suite.addTest(unittest.makeSuite(AssociativityTests))
     suite.addTest(unittest.makeSuite(MoesiTests))
-    suite.addTest(unittest.makeSuite(Cache_Moesi_Tests))
+    suite.addTest(unittest.makeSuite(CacheStatesTests))
+    suite.addTest(unittest.makeSuite(CacheResponsesTests))
     return suite
 
 if __name__ == "__main__":
