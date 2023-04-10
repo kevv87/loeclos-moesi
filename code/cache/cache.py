@@ -1,4 +1,5 @@
 from code.cache.constants import *
+from code.cache.moesi import Moesi
 
 class CacheBlock():
     def __init__(self, number):
@@ -8,8 +9,9 @@ class CacheBlock():
         self.mem_address = 0
 
 class Cache():
-    def __init__(self):
+    def __init__(self, moesiService = Moesi()):
         self.contents = [CacheBlock(0), CacheBlock(1), CacheBlock(2), CacheBlock(3)]
+        self.moesiService = moesiService
 
     def run_substitution_policy(self, subset):
         i = 0

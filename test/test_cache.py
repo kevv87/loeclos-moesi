@@ -1,5 +1,6 @@
 import unittest
 from code.cache.cache import Cache, CacheBlock
+from code.cache.moesi import Moesi
 from code.cache.constants import *
 
 from code.operations import WriteOperation, ReadOperation
@@ -169,11 +170,113 @@ class AssociativityTests(unittest.TestCase):
 
         self.assertEqual(modified_block.mem_address, write_operation.address)
 
+class MoesiTests(unittest.TestCase):
+    def test_moesi_should_exist(self):
+        self.assertTrue(Moesi)
+
+    def test_moesi_invalid_to_modified_on_self_write(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.I, MoesiEvents.SELF_WRITE)
+        self.assertEqual(nextState, MoesiStates.M)
+
+    def test_moesi_invalid_to_shared_on_self_non_exclusive_read(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.I, MoesiEvents.SELF_READ)
+        self.assertEqual(nextState, MoesiStates.S)
+
+    def test_moesi_invalid_to_exclusive_on_self_exclusive_read(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.I, MoesiEvents.EXCLUSIVE_READ)
+        self.assertEqual(nextState, MoesiStates.E)
+
+    def test_moesi_remains_invalid_on_other_operations(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.I, MoesiEvents.OTHERS_READ)
+        self.assertEqual(nextState, MoesiStates.I)
+
+        nextState = moesi.compute_next_state(MoesiStates.I, MoesiEvents.OTHERS_WRITE)
+        self.assertEqual(nextState, MoesiStates.I)
+
+    def test_moesi_modified_to_invalid_on_others_write(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.M, MoesiEvents.OTHERS_WRITE)
+        self.assertEqual(nextState, MoesiStates.I)
+
+    def test_moesi_modified_to_owner_on_others_read(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.M, MoesiEvents.OTHERS_READ)
+        self.assertEqual(nextState, MoesiStates.O)
+
+    def test_moesi_modified_remains_on_other_ops(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.M, MoesiEvents.SELF_WRITE)
+        self.assertEqual(nextState, MoesiStates.M)
+
+        nextState = moesi.compute_next_state(MoesiStates.M, MoesiEvents.SELF_READ)
+        self.assertEqual(nextState, MoesiStates.M)
+
+    def test_moesi_shared_to_invalid_on_others_write(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.S, MoesiEvents.OTHERS_WRITE)
+        self.assertEqual(nextState, MoesiStates.I)
+
+    def test_moesi_shared_to_modified_on_self_write(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.S, MoesiEvents.SELF_WRITE)
+        self.assertEqual(nextState, MoesiStates.M)
+
+    def test_moesi_shared_remains_on_other_ops(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.S, MoesiEvents.OTHERS_READ)
+        self.assertEqual(nextState, MoesiStates.S)
+
+        nextState = moesi.compute_next_state(MoesiStates.S, MoesiEvents.SELF_READ)
+        self.assertEqual(nextState, MoesiStates.S)
+
+    def test_moesi_exclusive_to_invalid_on_others_write(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.E, MoesiEvents.OTHERS_WRITE)
+        self.assertEqual(nextState, MoesiStates.I)
+
+    def test_moesi_exclusive_to_modified_on_self_write(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.E, MoesiEvents.SELF_WRITE)
+        self.assertEqual(nextState, MoesiStates.M)
+
+    def test_moesi_exclusive_to_shared_on_others_read(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.E, MoesiEvents.OTHERS_READ)
+        self.assertEqual(nextState, MoesiStates.S)
+
+    def test_moesi_exclusive_remains_on_other_ops(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.E, MoesiEvents.SELF_READ)
+        self.assertEqual(nextState, MoesiStates.E)
+
+    def test_moesi_owner_to_modified_on_self_write(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.O, MoesiEvents.SELF_WRITE)
+        self.assertEqual(nextState, MoesiStates.M)
+
+    def test_moesi_owner_to_invalid_on_others_write(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.O, MoesiEvents.OTHERS_WRITE)
+        self.assertEqual(nextState, MoesiStates.I)
+
+    def test_moesi_owner_remains_on_other_ops(self):
+        moesi = Moesi()
+        nextState = moesi.compute_next_state(MoesiStates.O, MoesiEvents.SELF_READ)
+        self.assertEqual(nextState, MoesiStates.O)
+
+        nextState = moesi.compute_next_state(MoesiStates.O, MoesiEvents.OTHERS_READ)
+        self.assertEqual(nextState, MoesiStates.O)
+
 def test_cache_suite():
     print("### Starting test_cache_suite")
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BasicCache))
     suite.addTest(unittest.makeSuite(AssociativityTests))
+    suite.addTest(unittest.makeSuite(MoesiTests))
     return suite
 
 if __name__ == "__main__":
