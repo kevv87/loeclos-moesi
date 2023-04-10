@@ -271,12 +271,221 @@ class MoesiTests(unittest.TestCase):
         nextState = moesi.compute_next_state(MoesiStates.O, MoesiEvents.OTHERS_READ)
         self.assertEqual(nextState, MoesiStates.O)
 
+class Cache_Moesi_Tests(unittest.TestCase):
+    def setUp(self):
+        self.cache = Cache()
+        self.cache.contents[0].address = 2
+        self.cache.contents[1].address = 4
+        self.cache.contents[2].address = 1
+        self.cache.contents[3].address = 3
+
+    def test_on_read_to_invalid_should_go_to_shared(self):
+        self.cache.contents[0].state = MoesiStates.I
+        readOperation = ReadOperation(2)
+        readOperation.address = 2
+
+        self.cache.read(readOperation)
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.S)
+
+    def test_on_write_to_invalid_should_go_to_modified(self):
+        self.cache.contents[0].state = MoesiStates.I
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 2
+
+        self.cache.write(writeOperation)
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.M)
+
+    def test_exclusive_read_to_invalid_should_go_to_exclusive(self):
+        self.cache.contents[0].state = MoesiStates.I
+        readOperation = ReadOperation(2)
+        readOperation.address = 10
+
+        self.cache.read(readOperation)
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.E)
+
+    def test_on_read_to_shared_should_remain_shared(self):
+        self.cache.contents[0].state = MoesiStates.S
+        readOperation = ReadOperation(2)
+        readOperation.address = 2
+
+        self.cache.read(readOperation)
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.S)
+
+    def test_on_write_to_shared_should_go_to_modified(self):
+        self.cache.contents[0].state = MoesiStates.S
+        self.cache.contents[0].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 8
+
+        self.cache.write(writeOperation)
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.M)
+
+    def test_on_notify_write_to_shared_should_go_to_invalid(self):
+        self.cache.contents[0].state = MoesiStates.S
+        self.cache.contents[0].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 8
+
+        self.cache.notify(writeOperation)
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.I)
+
+    def test_on_notify_read_to_shared_should_remain_shared(self):
+        self.cache.contents[0].state = MoesiStates.S
+        self.cache.contents[0].mem_address = 8
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 8
+
+        self.cache.notify(readOperation)
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.S)
+
+    def test_notify_rsvp_to_shared_should_wait_to_second_try_to_respond(self):
+        pass
+
+    def test_read_to_exclusive_should_remain_exclusive(self):
+        self.cache.contents[0].state = MoesiStates.E
+        self.cache.contents[0].mem_address = 8
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 8
+
+        self.cache.read(readOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.E)
+
+    def test_write_to_exclusive_should_go_to_modified(self):
+        self.cache.contents[0].state = MoesiStates.E
+        self.cache.contents[0].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 8
+
+        self.cache.write(writeOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.M)
+
+    def test_on_notify_read_to_exclusive_should_go_to_shared(self):
+        self.cache.contents[0].state = MoesiStates.E
+        self.cache.contents[0].mem_address = 8
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 8
+
+        self.cache.notify(readOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.S)
+
+    def test_on_notify_write_to_exclusive_should_go_to_invalid(self):
+        self.cache.contents[0].state = MoesiStates.E
+        self.cache.contents[0].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 8
+
+        self.cache.notify(writeOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.I)
+
+    def test_read_to_owner_should_remain_owner(self):
+        self.cache.contents[0].state = MoesiStates.O
+        self.cache.contents[0].mem_address = 8
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 8
+
+        self.cache.read(readOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.O)
+
+    def test_write_to_owner_should_go_to_modified(self):
+        self.cache.contents[0].state = MoesiStates.O
+        self.cache.contents[0].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 8
+
+        self.cache.write(writeOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.M)
+
+    def test_on_notify_read_to_owner_should_remain_owner(self):
+        self.cache.contents[0].state = MoesiStates.O
+        self.cache.contents[0].mem_address = 8
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 8
+
+        self.cache.notify(readOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.O)
+
+    def test_on_notify_write_to_owner_should_go_to_invalid(self):
+        self.cache.contents[0].state = MoesiStates.O
+        self.cache.contents[0].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 8
+
+        self.cache.notify(writeOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.I)
+
+    def test_read_to_modified_should_remain_modified(self):
+        self.cache.contents[0].state = MoesiStates.M
+        self.cache.contents[0].mem_address = 8
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 8
+
+        self.cache.read(readOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.M)
+
+    def test_write_to_modified_should_remain_modified(self):
+        self.cache.contents[0].state = MoesiStates.M
+        self.cache.contents[0].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 8
+
+        self.cache.write(writeOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.M)
+
+    def test_on_notify_write_to_modified_should_go_to_invalid(self):
+        self.cache.contents[0].state = MoesiStates.M
+        self.cache.contents[0].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 8
+
+        self.cache.notify(writeOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.I)
+
+    def test_on_notify_read_to_modified_should_go_to_owner(self):
+        self.cache.contents[0].state = MoesiStates.M
+        self.cache.contents[0].mem_address = 8
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 8
+
+        self.cache.notify(readOperation)
+
+        self.assertEqual(self.cache.contents[0].state, MoesiStates.O)
+
+    #TODO: Faltan writebacks
+
+
 def test_cache_suite():
     print("### Starting test_cache_suite")
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BasicCache))
     suite.addTest(unittest.makeSuite(AssociativityTests))
     suite.addTest(unittest.makeSuite(MoesiTests))
+    suite.addTest(unittest.makeSuite(Cache_Moesi_Tests))
     return suite
 
 if __name__ == "__main__":
