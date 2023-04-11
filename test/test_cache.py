@@ -13,7 +13,7 @@ from code.operations import WriteOperation, ReadOperation, ResponseOperation
 class BasicCache(unittest.TestCase):
     def setUp(self):
         self.busMock = Mock(spec = Bus)
-        self.cache = Cache(4, self.busMock)
+        self.cache = Cache(4, self.busMock, realTime=False)
 
     def test_cache_should_exist(self):
         self.assertTrue(Cache)
@@ -42,7 +42,7 @@ class BasicCache(unittest.TestCase):
 
     def test_cache_should_have_four_blocks(self):
         self.busMock = Mock(spec = Bus)
-        cache = Cache(4, self.busMock)
+        cache = Cache(4, self.busMock, realTime=False)
         self.assertEqual(len(cache.contents), 4)
 
     def test_should_write_operation(self):
@@ -101,7 +101,7 @@ class BasicCache(unittest.TestCase):
 class AssociativityTests(unittest.TestCase):
     def setUp(self):
         self.busMock = Mock(spec = Bus)
-        self.cache = Cache(4, self.busMock)
+        self.cache = Cache(4, self.busMock, realTime=False)
 
     def test_odd_directions_should_go_on_zero_or_one(self):
         write_operation = WriteOperation(2)
@@ -294,7 +294,7 @@ class MoesiTests(unittest.TestCase):
 class CacheStatesTests(unittest.TestCase):
     def setUp(self):
         self.busMock = Mock(spec = Bus)
-        self.cache = Cache(4, self.busMock)
+        self.cache = Cache(4, self.busMock, realTime=False)
         self.cache.contents[0].address = 2
         self.cache.contents[1].address = 4
         self.cache.contents[2].address = 1
@@ -512,7 +512,7 @@ class CacheStatesTests(unittest.TestCase):
 class CacheResponsesTests(unittest.TestCase):
     def setUp(self):
         self.busMock = Mock(spec = Bus)
-        self.cache = Cache(4, self.busMock)
+        self.cache = Cache(4, self.busMock, realTime=False)
 
     def test_cache_should_have_reference_to_bus(self):
         self.assertEqual(self.cache.bus, self.busMock)
@@ -593,11 +593,25 @@ class CacheResponsesTests(unittest.TestCase):
 
         self.assertEqual(result, False)
 
-        result = self.cache.notify_rsvp(readOperation)
+        result = self.cache.notify_rsvp([False, False, False])
 
         self.assertEqual(result.address, readOperation.address)
         self.assertEqual(result.data, self.cache.contents[0].data)
         self.assertEqual(result.processor_number, self.cache.processor_number)
+
+    def test_cache_should_writeback_on_eviction_of_modified(self):
+        print("### test_cache_should_writeback_on_eviction_of_modified")
+        self.cache.contents[0].state = MoesiStates.M
+        self.cache.contents[0].mem_address = 20
+        self.cache.contents[1].state = MoesiStates.M
+        self.cache.contents[1].mem_address = 8
+
+        writeOperation = WriteOperation(2)
+        writeOperation.address = 4
+        self.cache.write(writeOperation)
+        print("### finished ")
+
+        self.busMock.writeBack.assert_called_once()
 
     def test_if_cache_has_requested_block_on_shared_should_not_respond_on_second_try_when_someone_responded_first(self):
         self.cache.contents[0].state = MoesiStates.S

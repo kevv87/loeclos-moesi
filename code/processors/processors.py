@@ -5,14 +5,23 @@ import time
 from code.operations import CalcOperation, WriteOperation, ReadOperation
 from code.my_random import poisson_random_numbers
 from code.processors.constants import *
+from code.cache.cache import Cache
+
+from code.ui.base import Events, Objects
+from code.ui.console import Console
 
 class Processor(threading.Thread):
-    def __init__(self, comm_bus):
+    def __init__(self, comm_bus, logger=Console()):
         threading.Thread.__init__(self)
 
         self.comm_bus = comm_bus
         self.processor_number = uuid.uuid4()
         self.stop_event = threading.Event()
+
+        self.cache = Cache(self.processor_number, self.comm_bus)
+
+        log_params = [Events.PROCESSOR_CREATION, self.processor_number]
+        logger.log(log_params)
 
     def create_calc_operation(self):
         return CalcOperation(self.processor_number) 
@@ -35,11 +44,14 @@ class Processor(threading.Thread):
         return operation
 
     def run(self):
-        print("### Starting Processor ###")
         while not self.stop_event.is_set():
             random_number = poisson_random_numbers(5, 2, 1, 3)[0]
             operation = self.choose_operation(random_number)
-            self.comm_bus.append(operation)
+
+            if operation.operation_type == "write":
+                self.cache.write(operation)
+            elif operation.operation_type == "read":
+                self.cache.read(operation)
 
             time.sleep(PROCESSOR_ACTION_SECONDS)
 
