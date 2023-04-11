@@ -58,11 +58,12 @@ class Bus():
                 caches_response = self.publisher_service.notify_subscribers_rsvp(caches_response)
                 found_in_caches = self.search_in_caches(caches_response)
                 if found_in_caches:
+                    result = self.take_first_cache_response(caches_response)
                     log_params =\
                         [Events.CACHE_GIVES_RESPONSE, result.processor_number]
                     self.logger.log(log_params)
                     self.semaphore.release()
-                    return caches_response[0]
+                    return result
                 else:
                     result = self.retrieve(operation)
         else:

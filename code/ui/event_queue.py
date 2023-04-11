@@ -1,6 +1,8 @@
 import threading
 
-class EventQueue():
+from code.ui.console import Console
+
+class EventQueue(Console):
     def __init__(self):
         self.queue = []
         self.lock = threading.Lock()
@@ -13,6 +15,7 @@ class EventQueue():
         return event
 
     def log(self, params):
+        super().log(params)
         self.add(params)
 
     def is_empty(self):

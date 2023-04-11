@@ -6,6 +6,7 @@ from code.operations import CalcOperation, WriteOperation, ReadOperation
 from code.cache.cache import CacheBlock
 
 from code.ui.graphic_tkinter.graphic_processor import GraphicProcessor
+from code.ui.graphic_tkinter.graphic_mem import GraphicMemory
 from code.ui.base import Events, Objects
 from code.ui.console import NoLogger
 
@@ -36,11 +37,7 @@ class GUI():
         canvas.configure(scrollregion=canvas.bbox("all"))
 
     def creating_memory(self):
-        memory_frame = tk.Frame(self.root, borderwidth=2, relief=tk.GROOVE)
-        memory_frame.pack(side=tk.TOP, padx=10, pady=10)
-
-        memory_label = tk.Label(memory_frame, text="Main Memory")
-        memory_label.pack()
+        self.graphic_memory = GraphicMemory(self.root)
 
     def search_processor_by_id(self, proc_id):
         for proc in self.processors:
@@ -77,6 +74,10 @@ class GUI():
             new_cache_block.data = event[4]
             new_cache_block.state = event[5]
             graphic_processor.set_cache_block(event[2], new_cache_block)
+        elif action == Events.WRITEBACK:
+            address = event[2]
+            data = event[3]
+            self.graphic_memory.set_value(address, data)
 
     def update(self):
         while(self.eventQueue.is_empty() == False):
