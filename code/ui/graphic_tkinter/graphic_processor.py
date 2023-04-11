@@ -22,9 +22,9 @@ class GraphicProcessor():
         self.update()
 
     def set_cache_block(self, idx, cache_block):
-        self.cache[idx][1] = cache_block.address
-        self.cache[idx][2] = cache_block.value
-        self.cache[idx][3] = cache_block.state
+        self.cache[idx][1] = cache_block.mem_address
+        self.cache[idx][2] = cache_block.data
+        self.cache[idx][3] = cache_block.state.value
 
     def create_frame(self):
         frame = tk.Frame(self.container, bd=1, relief="solid")
@@ -80,7 +80,7 @@ class GraphicProcessor():
         string =\
             self.operation.operation_type + " "
         if op_type == "read":
-            string += "from 0x" + hex(self.operation.address)
+            string += "from " + hex(self.operation.address)
         elif op_type == "write":
             string +=  bin(self.operation.data) + " to " + hex(self.operation.address)
 

@@ -1,7 +1,9 @@
+import time
 import tkinter as tk
 from tkinter import ttk
 
 from code.operations import CalcOperation, WriteOperation, ReadOperation
+from code.cache.cache import CacheBlock
 
 from code.ui.graphic_tkinter.graphic_processor import GraphicProcessor
 from code.ui.base import Events, Objects
@@ -62,18 +64,28 @@ class GUI():
             write_operation.address = event[2]
             write_operation.data = event[3]
             graphic_processor.set_operation(write_operation)
+        elif action == Events.GENERATED_READ_OPERATION:
+            graphic_processor = self.search_processor_by_id(event[1])
+            read_operation = ReadOperation(event[1], logger=NoLogger())
+            read_operation.address = event[2]
+            graphic_processor.set_operation(read_operation)
+        elif ( action == Events.REPLACING_BLOCK or action == Events.WRITING_BLOCK or 
+              action == Events.UPDATING_BLOCK):
+            graphic_processor = self.search_processor_by_id(event[1])
+            new_cache_block = CacheBlock(event[2])
+            new_cache_block.mem_address = event[3]
+            new_cache_block.data = event[4]
+            new_cache_block.state = event[5]
+            graphic_processor.set_cache_block(event[2], new_cache_block)
 
     def update(self):
-        self.eventQueue.lock.acquire()
         while(self.eventQueue.is_empty() == False):
             next_event = self.eventQueue.get()
             self.handle_event(next_event)
-        self.eventQueue.lock.release()
+            for processor in self.processors:
+                processor.update()
 
-        for processor in self.processors:
-            processor.update()
-
-        self.root.after(200, self.update)
+        self.root.after(10, self.update)
 
     def __init__(self, eventQueue):
         self.root = tk.Tk()

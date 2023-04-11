@@ -12,7 +12,9 @@ class Publisher():
 
     def notify_subscribers(self, msg=None):
         for subscriber in self.subscribers:
-            subscriber.notify(msg)
+            thread = Thread(target=subscriber.notify,
+                       args=(msg,) )
+            thread.start()
 
     def unsubscribeAll(self):
         self.subscribers = []

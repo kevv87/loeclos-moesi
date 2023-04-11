@@ -13,9 +13,7 @@ class EventQueue():
         return event
 
     def log(self, params):
-        self.lock.acquire()
         self.add(params)
-        self.lock.release()
 
     def is_empty(self):
         return len(self.queue) == 0

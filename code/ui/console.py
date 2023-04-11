@@ -13,7 +13,6 @@ class Console():
         print("·· Created processor {}".format(processor_number))
 
     def log_generated_calc_operation(self, processor_number):
-        pdb.set_trace()
         print("·· Processor {}: generated a calc operation".format(processor_number))
 
     def log_generated_write_operation(self, processor_number, address, value):

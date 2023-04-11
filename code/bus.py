@@ -52,6 +52,7 @@ class Bus():
                 self.logger.log(log_params)
 
                 self.publisher_service.notify_subscribers(result)
+                self.semaphore.release()
                 return result
             else:
                 caches_response = self.publisher_service.notify_subscribers_rsvp(caches_response)
@@ -60,6 +61,7 @@ class Bus():
                     log_params =\
                         [Events.CACHE_GIVES_RESPONSE, result.processor_number]
                     self.logger.log(log_params)
+                    self.semaphore.release()
                     return caches_response[0]
                 else:
                     result = self.retrieve(operation)
@@ -71,12 +73,11 @@ class Bus():
         return result
 
     def write(self, operation):
+        print("Acquiring semaphore to write")
         self.semaphore.acquire()
         self.publisher_service.notify_subscribers(operation)
-        result = self.retrieve(operation)
+        print("Releasing semaphore after write")
         self.semaphore.release()
-
-        return result
 
     def writeBack(self, operation):
         self.semaphore.acquire()

@@ -200,6 +200,7 @@ class Cache(SubscriberRsvp):
 
     def write(self, operation):
         matching_block = self.find_block(operation)
+        self.bus.write(operation)
 
         if matching_block:
             matching_block.data = operation.data
