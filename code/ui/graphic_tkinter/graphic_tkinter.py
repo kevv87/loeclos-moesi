@@ -98,4 +98,5 @@ class GUI():
 
         self.update()
 
+    def start(self):
         self.root.mainloop()

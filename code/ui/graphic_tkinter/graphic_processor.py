@@ -8,6 +8,7 @@ class GraphicProcessor():
         self.root = root
         self.number = number
         self.operation = None
+        self.last_operation = None
         self.cache = [
             [0, 0, 0, "I"],
             [1, 0, 0, "I"],
@@ -32,6 +33,10 @@ class GraphicProcessor():
         self.proc_label = tk.Label(frame, text=f"Processor {self.number}")
         self.proc_label.pack(side="top", fill="x")
 
+
+        self.last_operation_label = tk.Label(frame, text="Last Operation: None")
+        self.last_operation_label.pack(side="top", fill="x")
+
         self.operation_label = tk.Label(frame, text="Operation: {}".format(self.get_operation()))
         self.operation_label.pack(side="top", fill="x")
 
@@ -49,11 +54,11 @@ class GraphicProcessor():
             block_label.pack(side="left")
             this_cache_labels.append(block_label)
 
-            address_label = tk.Label(container, text="Address: {}".format(hex(address)), width=10)
+            address_label = tk.Label(container, text="Address: {}".format(bin(address)), width=10)
             address_label.pack(side="left")
             this_cache_labels.append(address_label)
 
-            value_label = tk.Label(container, text="Value: {}".format(bin(value)), width=10)
+            value_label = tk.Label(container, text="Value: {}".format(hex(value)), width=10)
             value_label.pack(side="left")
             this_cache_labels.append(value_label)
             
@@ -70,7 +75,22 @@ class GraphicProcessor():
         self.number = processor_id
 
     def set_operation(self, operation):
+        self.last_operation = self.operation
         self.operation = operation
+
+    def get_last_operation(self):
+        if not self.last_operation:
+            return "None"
+
+        op_type = self.last_operation.operation_type 
+        string =\
+            self.last_operation.operation_type + " "
+        if op_type == "read":
+            string += "from " + hex(self.last_operation.address)
+        elif op_type == "write":
+            string +=  bin(self.last_operation.data) + " to " + hex(self.last_operation.address)
+
+        return string
 
     def get_operation(self):
         if not self.operation:
@@ -98,8 +118,10 @@ class GraphicProcessor():
             self.cache_labels[idx][3].config(text="State: {}".format(state))
 
     def update(self):
-
+        print("Called update")
         self.proc_label.config(text=f"Processor {self.number}")
+        self.last_operation_label.config(text="Last Operation: {}".format(self.get_last_operation()))
         self.operation_label.config(text="Operation: {}".format(self.get_operation()))
+
         self.update_cache_labels()
 

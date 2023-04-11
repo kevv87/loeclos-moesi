@@ -8,7 +8,7 @@ from code.patterns.observer import SubscriberRsvp
 from code.operations import ResponseOperation, Operation
 
 from code.ui.base import Events, Objects
-from code.ui.console import Console
+from code.ui.console import Console, NoLogger
 
 import pdb
 
@@ -47,7 +47,8 @@ class Cache(SubscriberRsvp):
 
         if ( ( previous_state == MoesiStates.M or previous_state == MoesiStates.O )
                 and next_state == MoesiStates.I ):
-            self.bus.writeBack(operation)
+            writebackOperation = ResponseOperation(self.processor_number, block.data, block.mem_address, logger=NoLogger())
+            self.bus.writeBack(writebackOperation)
 
         block.state = next_state
         log_params = [
@@ -240,7 +241,7 @@ class Cache(SubscriberRsvp):
         if self.contents[idx_to_evict].state == MoesiStates.M:
             writebackOperation = ResponseOperation(
                     self.processor_number, self.contents[idx_to_evict].data,
-                    self.contents[idx_to_evict].mem_address )
+                    self.contents[idx_to_evict].mem_address, logger=NoLogger())
             self.bus.writeBack(writebackOperation)
     
     def read(self, operation):

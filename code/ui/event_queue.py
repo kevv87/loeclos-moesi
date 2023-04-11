@@ -20,4 +20,7 @@ class EventQueue(Console):
 
     def is_empty(self):
         return len(self.queue) == 0
+    
+    def clear(self):
+        self.queue = []
 

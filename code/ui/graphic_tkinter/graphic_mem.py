@@ -19,10 +19,10 @@ class GraphicMemory():
             data = self.contents[i][1]
 
             address_label = self.mem_labels[i][0]
-            address_label.configure(text="Address: {}".format(hex(address)))
+            address_label.configure(text="Address: {}".format(bin(address)))
 
             data_label = self.mem_labels[i][1]
-            data_label.configure(text="Data: {}".format(bin(data)))
+            data_label.configure(text="Data: {}".format(hex(data)))
 
     def create_frame(self):
         frame = tk.Frame(self.root, bd=1, relief="solid")
