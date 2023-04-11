@@ -1,0 +1,17 @@
+Tomar en cuenta la arquitectura overall:
+  - N procesadores, cada uno con un cache
+  - Un cache por procesador 
+    - Caches de 4 bloques
+    - Asociativa por 2-way
+    - Sigue el protocolo MOESI
+      - Se aplica mediante una maquina de estado
+    - Guarda:
+      - Numero de bloque 
+      - Dato 
+      - Direccion 
+      - Estado
+    - Al iniciar la simulacion, todos los caches estan vacios
+  - Procesadores conectados a un unico bus, nada mas
+  - Bus conectado a los procesadores y a memoria principal
+  - Procesadores hacen requests de memoria primero a cache, en ciertos casos al bus 
+  - El bus trata de satisfacer el request preguntando a los otros procesadores por el dato, de no encontrarse lo trae de memoria principal

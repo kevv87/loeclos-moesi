@@ -17,3 +17,6 @@ test_bus:
 test_observer:
 	${PY} -m test.test_observer
 
+test_cache:
+	${PY} -m test.test_cache
+
