@@ -3,7 +3,7 @@ Tomar en cuenta la arquitectura overall:
   - Un cache por procesador 
     - Caches de 4 bloques
     - Asociativa por 2-way
-    - Sigue el protocolo MOESI, falta esto
+    - Sigue el protocolo MOESI
       - Se aplica mediante una maquina de estado
     - Guarda:
       - Numero de bloque 

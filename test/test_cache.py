@@ -1,12 +1,14 @@
 import unittest
+import pdb
 from unittest.mock import Mock
 
 from code.cache.cache import Cache, CacheBlock
 from code.cache.moesi import Moesi
 from code.cache.constants import *
 from code.bus import Bus
+from code.constants import *
 
-from code.operations import WriteOperation, ReadOperation
+from code.operations import WriteOperation, ReadOperation, ResponseOperation
 
 class BasicCache(unittest.TestCase):
     def setUp(self):
@@ -27,7 +29,7 @@ class BasicCache(unittest.TestCase):
         self.assertEqual(cache_block.mem_address, 0)
         self.assertEqual(cache_block.state, MoesiStates.I)
 
-    def notest_cache_block_should_have_basic_attributes(self):
+    def test_cache_block_should_have_basic_attributes(self):
         cache_block = CacheBlock(1)
         cache_block.data = 3
         cache_block.mem_address = 4
@@ -83,6 +85,18 @@ class BasicCache(unittest.TestCase):
         result_operation = self.cache.read(read_operation)
 
         self.assertEqual(result_operation, write_operation.data)
+
+    def test_on_miss_should_get_it_from_bus(self):
+        readOperation = ReadOperation(2)
+        readOperation.address = 7
+
+        responseOperation = ResponseOperation(2, 3, readOperation.address)
+        self.busMock.read.return_value = responseOperation
+
+        self.cache.read(readOperation)
+
+        self.busMock.read.assert_called_with(readOperation)
+        self.cache.contents[2].data = responseOperation.data
 
 class AssociativityTests(unittest.TestCase):
     def setUp(self):
@@ -307,6 +321,10 @@ class CacheStatesTests(unittest.TestCase):
         readOperation = ReadOperation(2)
         readOperation.address = 10
 
+        responseOperation = ResponseOperation(
+                PROCESSOR_NUMBER_MEMORY, 3, readOperation.address )
+        self.busMock.read.return_value = responseOperation
+
         self.cache.read(readOperation)
         self.assertEqual(self.cache.contents[0].state, MoesiStates.E)
 
@@ -520,8 +538,85 @@ class CacheResponsesTests(unittest.TestCase):
         self.cache.notify(writeOperation)
 
         self.busMock.writeBack.assert_called_once_with(writeOperation)
+        
+    def test_if_cache_has_requested_block_on_owner_should_give_it_first_try(self):
+        self.cache.contents[0].state = MoesiStates.O
+        self.cache.contents[0].mem_address = 8
+        self.cache.contents[0].data = 4
 
-    #TODO: Hay que verificar si las notificaciones son propias o de otro procesador
+        readOperation = ReadOperation(2)
+        readOperation.address = 8
+
+        result = self.cache.notify_rsvp(readOperation)
+
+        self.assertEqual(result.address, readOperation.address)
+        self.assertEqual(result.data, self.cache.contents[0].data)
+        self.assertEqual(result.processor_number, self.cache.processor_number)
+
+    def test_if_cache_has_requested_block_on_exclusive_should_give_it_first_try(self):
+        self.cache.contents[0].state = MoesiStates.E
+        self.cache.contents[0].mem_address = 6
+        self.cache.contents[0].data = 4
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 6
+
+        result = self.cache.notify_rsvp(readOperation)
+
+        self.assertEqual(result.address, readOperation.address)
+        self.assertEqual(result.data, self.cache.contents[0].data)
+        self.assertEqual(result.processor_number, self.cache.processor_number)
+
+    def test_if_cache_has_requested_block_on_modified_should_give_it_first_try(self):
+        self.cache.contents[0].state = MoesiStates.M
+        self.cache.contents[0].mem_address = 6
+        self.cache.contents[0].data = 4
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 6
+
+        result = self.cache.notify_rsvp(readOperation)
+
+        self.assertEqual(result.address, readOperation.address)
+        self.assertEqual(result.data, self.cache.contents[0].data)
+        self.assertEqual(result.processor_number, self.cache.processor_number)
+
+    def test_if_cache_has_requested_block_on_shared_should_respond_on_second_try_when_nobody_has_responded(self):
+        self.cache.contents[0].state = MoesiStates.S
+        self.cache.contents[0].mem_address = 6
+        self.cache.contents[0].data = 4
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 6
+
+        result = self.cache.notify_rsvp(readOperation)
+
+        self.assertEqual(result, False)
+
+        result = self.cache.notify_rsvp(readOperation)
+
+        self.assertEqual(result.address, readOperation.address)
+        self.assertEqual(result.data, self.cache.contents[0].data)
+        self.assertEqual(result.processor_number, self.cache.processor_number)
+
+    def test_if_cache_has_requested_block_on_shared_should_not_respond_on_second_try_when_someone_responded_first(self):
+        self.cache.contents[0].state = MoesiStates.S
+        self.cache.contents[0].mem_address = 6
+        self.cache.contents[0].data = 4
+
+        readOperation = ReadOperation(2)
+        readOperation.address = 6
+
+        result = self.cache.notify_rsvp(readOperation)
+
+        self.assertEqual(result, False)
+
+        resultOperation = ResponseOperation(7, 4, readOperation.address)
+        self.cache.notify(resultOperation)
+
+        result = self.cache.notify_rsvp(readOperation)
+
+        self.assertEqual(result, False)
 
 def test_cache_suite():
     print("### Starting test_cache_suite")

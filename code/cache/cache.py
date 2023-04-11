@@ -21,6 +21,8 @@ class Cache(SubscriberRsvp):
         self.coherencyService = coherencyService
         self.processor_number = my_processor_number
 
+        self.can_answer_with_shared = False
+
     def process_read_notification(self, operation):
         matching_block = self.find_block(operation)
 
@@ -52,11 +54,50 @@ class Cache(SubscriberRsvp):
             self.process_read_notification(msg)
         elif msg.operation_type == "write":
             self.process_write_notification(msg)
+        elif msg.operation_type == "response":
+            if self.can_answer_with_shared:
+                self.can_answer_with_shared = False
         else:
             print("Unknown operation type: " + msg.operation_type)
 
+    def answer_with_shared(self, matching_block):
+        if self.can_answer_with_shared:
+            responseOperation =\
+                ResponseOperation(
+                        self.processor_number, matching_block.data,
+                        matching_block.mem_address )
+
+            self.can_answer_with_shared = False
+            self.waiting_for_block = None
+
+            return responseOperation
+        else: 
+            self.waiting_for_block = matching_block
+            self.can_answer_with_shared = True
+            return False
+
+    def process_rsvp(self, operation):
+        matching_block = self.find_block(operation)
+
+        if matching_block:
+            if ( matching_block.state == MoesiStates.O or
+                matching_block.state == MoesiStates.E or 
+                matching_block.state == MoesiStates.M ):
+                responseOperation =\
+                    ResponseOperation(
+                            self.processor_number, matching_block.data,
+                            matching_block.mem_address )
+                return responseOperation
+            elif matching_block.state == MoesiStates.S:
+                return self.answer_with_shared(matching_block)
+
+        return False
+
     def notify_rsvp(self, msg=None):
-        pass
+        if msg.operation_type == "read":
+            responseOperation = self.process_rsvp(msg)
+            self.process_read_notification(msg)
+            return responseOperation
 
     def run_substitution_policy(self, subset):
         i = 0
@@ -103,11 +144,8 @@ class Cache(SubscriberRsvp):
 
         return idx_to_replace
 
-    def read_from_bus(self, operation, test_exclusive=False):
-        # Retrieve data from bus
-        responseOp = ResponseOperation(1, 2)
-        if test_exclusive:
-            responseOp = ResponseOperation(PROCESSOR_NUMBER_MEMORY, 2)
+    def read_from_bus(self, operation):
+        responseOp = self.bus.read(operation)
         comes_from_memory = responseOp.processor_number == PROCESSOR_NUMBER_MEMORY
         return (responseOp.data, comes_from_memory)
 
@@ -149,12 +187,7 @@ class Cache(SubscriberRsvp):
         if matching_block:
             return matching_block.data
         else:
-            # TODO: If not found, is miss and should fetch it and then replace it in
-            # the cache
-            # TODO: Go to bus
             (data, comes_from_memory) = self.read_from_bus(operation)
-            if operation.address == 10:
-                (data, comes_from_memory) = self.read_from_bus(operation, test_exclusive=True)
             idx_to_replace = self.find_idx_to_replace(operation)
 
             self.contents[idx_to_replace].data = data
