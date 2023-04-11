@@ -1,13 +1,9 @@
 from code.processors.processors import Processor
 from code.bus import Bus
 from code.memory.memory import Memory
-
 from code.ui.console import Console
-from code.ui.graphic_tkinter.graphic_tkinter import GUI
 
 def main():
-    gui = GUI()
-
     logger = Console()
 
     main_memory = Memory()

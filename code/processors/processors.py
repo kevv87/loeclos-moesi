@@ -18,7 +18,7 @@ class Processor(threading.Thread):
         self.processor_number = uuid.uuid4()
         self.stop_event = threading.Event()
 
-        self.cache = Cache(self.processor_number, self.comm_bus)
+        self.cache = Cache(self.processor_number, self.comm_bus, logger=logger)
 
         log_params = [Events.PROCESSOR_CREATION, self.processor_number]
         logger.log(log_params)
