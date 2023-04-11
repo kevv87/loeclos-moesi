@@ -1,10 +1,19 @@
 from code.ui.base import Events, Objects
+import pdb
+
+class NoLogger():
+    def __init__(self):
+        pass
+
+    def log(self, params):
+        pass
 
 class Console():
     def log_proc_creation(self, processor_number):
         print("·· Created processor {}".format(processor_number))
 
     def log_generated_calc_operation(self, processor_number):
+        pdb.set_trace()
         print("·· Processor {}: generated a calc operation".format(processor_number))
 
     def log_generated_write_operation(self, processor_number, address, value):

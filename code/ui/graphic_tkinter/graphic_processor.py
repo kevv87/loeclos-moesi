@@ -7,6 +7,7 @@ class GraphicProcessor():
     def __init__(self, root, number, container):
         self.root = root
         self.number = number
+        self.operation = None
         self.cache = [
             [0, 0, 0, "I"],
             [1, 0, 0, "I"],
@@ -14,12 +15,11 @@ class GraphicProcessor():
             [3, 0, 0, "I"],
         ]
         self.cache_labels = []
-        self.operation = CalcOperation(self.number)
         self.test_counter = 0
         self.container = container
 
         self.create_frame()
-        self.update_labels()
+        self.update()
 
     def set_cache_block(self, idx, cache_block):
         self.cache[idx][1] = cache_block.address
@@ -29,8 +29,8 @@ class GraphicProcessor():
     def create_frame(self):
         frame = tk.Frame(self.container, bd=1, relief="solid")
 
-        label = tk.Label(frame, text=f"Processor {self.number}")
-        label.pack(side="top", fill="x")
+        self.proc_label = tk.Label(frame, text=f"Processor {self.number}")
+        self.proc_label.pack(side="top", fill="x")
 
         self.operation_label = tk.Label(frame, text="Operation: {}".format(self.get_operation()))
         self.operation_label.pack(side="top", fill="x")
@@ -44,27 +44,62 @@ class GraphicProcessor():
             value = cache_to_write[2]
             state = cache_to_write[3]
 
-            tk.Label(container, text=f"Block {j}", width=10).pack(side="left")
-            tk.Label(container, text="Address: {}".format(hex(address)), width=10).pack(side="left")
-            tk.Label(container, text="Value: {}".format(bin(value)), width=10).pack(side="left")
-            tk.Label(container, text="State: {}".format(state), width=10).pack(side="left")
+            this_cache_labels = []
+            block_label = tk.Label(container, text=f"Block {j}", width=10)
+            block_label.pack(side="left")
+            this_cache_labels.append(block_label)
+
+            address_label = tk.Label(container, text="Address: {}".format(hex(address)), width=10)
+            address_label.pack(side="left")
+            this_cache_labels.append(address_label)
+
+            value_label = tk.Label(container, text="Value: {}".format(bin(value)), width=10)
+            value_label.pack(side="left")
+            this_cache_labels.append(value_label)
+            
+            state_label = tk.Label(container, text="State: {}".format(state), width=10)
+            state_label.pack(side="left")
+            this_cache_labels.append(state_label)
+            
+            self.cache_labels.append(this_cache_labels)
 
         frame.pack(side="left", padx=10, pady=10)
         return frame
+
+    def set_id(self, processor_id):
+        self.number = processor_id
 
     def set_operation(self, operation):
         self.operation = operation
 
     def get_operation(self):
+        if not self.operation:
+            return "None"
+
         op_type = self.operation.operation_type 
         string =\
             self.operation.operation_type + " "
         if op_type == "read":
             string += "from 0x" + hex(self.operation.address)
         elif op_type == "write":
-            string += "0b" + bin(self.operation.value) + " to 0x" + hex(self.operation.address)
+            string +=  bin(self.operation.data) + " to " + hex(self.operation.address)
 
-    def update_labels(self):
-        self.test_counter += 1
-        self.operation_label.config(text="Operation: {}".format(self.test_counter))
-        self.root.after(1000, self.update_labels)
+        return string
+
+    def update_cache_labels(self):
+        for cache_values in self.cache:
+            idx = cache_values[0]
+            address = cache_values[1]
+            value = cache_values[2]
+            state = cache_values[3]
+
+            self.cache_labels[idx][1].config(text="Address: {}".format(hex(address)))
+            self.cache_labels[idx][2].config(text="Value: {}".format(bin(value)))
+            self.cache_labels[idx][3].config(text="State: {}".format(state))
+
+    def update(self):
+
+        self.proc_label.config(text=f"Processor {self.number}")
+        self.operation_label.config(text="Operation: {}".format(self.get_operation()))
+        self.update_cache_labels()
+

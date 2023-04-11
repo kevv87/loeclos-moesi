@@ -20,17 +20,18 @@ class Processor(threading.Thread):
 
         self.cache = Cache(self.processor_number, self.comm_bus, logger=logger)
 
+        self.logger = logger
         log_params = [Events.PROCESSOR_CREATION, self.processor_number]
         logger.log(log_params)
 
     def create_calc_operation(self):
-        return CalcOperation(self.processor_number) 
+        return CalcOperation(self.processor_number, logger=self.logger)
 
     def create_write_operation(self):
-        return WriteOperation(self.processor_number)
+        return WriteOperation(self.processor_number, logger=self.logger)
 
     def create_read_operation(self):
-        return ReadOperation(self.processor_number)
+        return ReadOperation(self.processor_number, logger=self.logger)
 
     def choose_operation(self, random_number):
         if random_number == 1:
