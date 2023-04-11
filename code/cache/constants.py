@@ -1,4 +1,7 @@
 from enum import Enum
+from code.processors.constants import PROCESSOR_ACTION_SECONDS
+
+CACHE_ACCESS_SECONDS = PROCESSOR_ACTION_SECONDS * 2
 
 class MoesiStates(Enum):
     M = 0
