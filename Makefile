@@ -1,6 +1,7 @@
 PY = python3
 
-default: test_all
+main: 
+	$(PY) -m code.main
 
 test_all:
 	$(PY) -m test.test
@@ -19,4 +20,7 @@ test_observer:
 
 test_cache:
 	${PY} -m test.test_cache
+
+test_cache_processor:
+	${PY} -m test.integration.cache_processor
 
