@@ -4,11 +4,11 @@ from code.processors.constants import PROCESSOR_ACTION_SECONDS
 CACHE_ACCESS_SECONDS = PROCESSOR_ACTION_SECONDS * 2
 
 class MoesiStates(Enum):
-    M = 0
-    O = 1
-    E = 2
-    S = 3
-    I = 4
+    M = "M"
+    O = "O"
+    E = "E"
+    S = "S"
+    I = "I"
 
 class MoesiEvents(Enum):
     SELF_READ = 0

@@ -12,7 +12,7 @@ Acciones:
     1. Id procesador
   2. Generated_calc_operation: Define que se generó una operación de calculo
     1. Procesador creador
-  3. Generated_write_operation:
+  3. Gnerated_write_operation:
     1. Procesador creador
     2. Direccion
     3. Dato
@@ -49,7 +49,6 @@ Acciones:
     3. Direccion
     4. Dato
     5. Nuevo estado del bloque
-
   13. Replacing block:
     1. Procesador
     2. Numero de bloque

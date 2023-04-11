@@ -1,4 +1,12 @@
 from code.ui.base import Events, Objects
+import pdb
+
+class NoLogger():
+    def __init__(self):
+        pass
+
+    def log(self, params):
+        pass
 
 class Console():
     def log_proc_creation(self, processor_number):
